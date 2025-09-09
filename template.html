@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Pet Photography Waiver</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body { font-family: sans-serif; margin: 20px; text-align: center; }
+h2 { margin-bottom: 5px; }
+p { margin-top: 0; margin-bottom: 15px; }
+input { display: block; margin: 10px auto; padding: 8px; width: 90%; max-width: 400px; font-size: 14px; }
+#signaturePad { border: 2px solid #333; border-radius: 6px; width: 100%; max-width: 500px; height: 200px; margin: auto; display: block; }
+button { padding: 10px 20px; margin: 10px 5px 0 5px; cursor: pointer; border: none; border-radius: 4px; background: #333; color: white; font-size: 14px; }
+</style>
+</head>
+<body>
+<h2>Pet Photography Waiver</h2>
+<p>Please fill out your info and sign below before your session.</p>
+
+<form id="waiverForm">
+<input type="text" id="name" placeholder="Full Name" required>
+<input type="email" id="email" placeholder="Email Address" required>
+<canvas id="signaturePad"></canvas>
+<div>
+<button type="button" id="clearBtn">Clear</button>
+<button type="submit">Sign & Submit</button>
+</div>
+</form>
+
+<!-- Signature Pad Library -->
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.6/dist/signature_pad.umd.min.js"></script>
+
+<script>
+// Initialize signature pad
+const canvas = document.getElementById('signaturePad');
+const signaturePad = new SignaturePad(canvas);
+
+function resizeCanvas() {
+const ratio = Math.max(window.devicePixelRatio || 1, 1);
+canvas.width = canvas.offsetWidth * ratio;
+canvas.height = canvas.offsetHeight * ratio;
+canvas.getContext("2d").scale(ratio, ratio);
+signaturePad.clear();
+}
+window.onresize = resizeCanvas;
+resizeCanvas();
+
+// Clear button
+document.getElementById("clearBtn").addEventListener("click", () => {
+signaturePad.clear();
+});
+
+// Form submission
+document.getElementById("waiverForm").addEventListener("submit", async (e) => {
+e.preventDefault();
+
+if (signaturePad.isEmpty()) {
+alert("Please provide a signature first.");
+return;
+}
+
+const name = document.getElementById("name").value;
+const email = document.getElementById("email").value;
+const signature = signaturePad.toDataURL();
+
+const data = { name, email, signature };
+
+try {
+const response = await fetch("https://script.google.com/macros/s/AKfycbzC0wMdtUFOHHq1iGxrhBmNOUkRCjF73t-qWKF4DOAghDRJJO_GxKjAwZTE6Xr0ruHarw/exec", { 
+method: "POST",
+body: JSON.stringify(data),
+headers: { "Content-Type": "application/json" },
+});
+
+const result = await response.json();
+if (result.status === "success") {
+alert("Waiver signed and emailed successfully!");
+signaturePad.clear();
+e.target.reset();
+} else {
+alert("Something went wrong: " + result.message);
+}
+} catch (err) {
+alert("Error submitting waiver: " + err);
+console.error(err);
+}
+});
+</script>
+</body>
+</html>
